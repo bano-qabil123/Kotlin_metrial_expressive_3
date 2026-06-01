@@ -1,0 +1,6 @@
+{
+  "name": "Pulse Social",
+  "description": "An expressive Material 3 social media app featuring rich media feeds, interactive comments, activity tracking, and Supabase integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
