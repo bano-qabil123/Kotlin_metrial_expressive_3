@@ -62,6 +62,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import com.example.data.local.ActivityEntity
 import com.example.data.local.PostEntity
 import com.example.data.local.ProfileEntity
@@ -72,6 +75,8 @@ import com.example.viewmodel.SocialViewModel
 import kotlinx.coroutines.launch
 
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.ui.zIndex
+import androidx.compose.foundation.rememberScrollState
 
 class MainActivity : ComponentActivity() {
     private val viewModel: SocialViewModel by viewModels()
@@ -355,58 +360,67 @@ fun AmbientGlowBackground(content: @Composable () -> Unit) {
             val width = size.width
             val height = size.height
 
-            if (isDark) {
-                // Indigo/Purple Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFFFFB74D).copy(alpha = 0.08f), Color.Transparent),
+            if (width > 0f && height > 0f) {
+                if (isDark) {
+                    val r1 = maxOf(1f, width * 0.6f)
+                    val r2 = maxOf(1f, width * 0.7f)
+                    val r3 = maxOf(1f, width * 0.5f)
+
+                    // Indigo/Purple Glow
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(Color(0xFFFFB74D).copy(alpha = 0.08f), Color.Transparent),
+                            center = Offset(width * 0.1f + animOffset1, height * 0.2f),
+                            radius = r1
+                        ),
                         center = Offset(width * 0.1f + animOffset1, height * 0.2f),
-                        radius = width * 0.6f
-                    ),
-                    center = Offset(width * 0.1f + animOffset1, height * 0.2f),
-                    radius = width * 0.6f
-                )
-                // Violet Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFFD0BCFF).copy(alpha = 0.18f), Color.Transparent),
+                        radius = r1
+                    )
+                    // Violet Glow
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(Color(0xFFD0BCFF).copy(alpha = 0.18f), Color.Transparent),
+                            center = Offset(width * 0.8f + animOffset2, height * 0.4f),
+                            radius = r2
+                        ),
                         center = Offset(width * 0.8f + animOffset2, height * 0.4f),
-                        radius = width * 0.7f
-                    ),
-                    center = Offset(width * 0.8f + animOffset2, height * 0.4f),
-                    radius = width * 0.7f
-                )
-                // Pinkish Core Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFFF48FB1).copy(alpha = 0.12f), Color.Transparent),
+                        radius = r2
+                    )
+                    // Pinkish Core Glow
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(Color(0xFFF48FB1).copy(alpha = 0.12f), Color.Transparent),
+                            center = Offset(width * 0.5f, height * 0.75f - animOffset1),
+                            radius = r3
+                        ),
                         center = Offset(width * 0.5f, height * 0.75f - animOffset1),
-                        radius = width * 0.5f
-                    ),
-                    center = Offset(width * 0.5f, height * 0.75f - animOffset1),
-                    radius = width * 0.5f
-                )
-            } else {
-                // Light Violet Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFFEADDFF).copy(alpha = 0.35f), Color.Transparent),
+                        radius = r3
+                    )
+                } else {
+                    val r1 = maxOf(1f, width * 0.5f)
+                    val r2 = maxOf(1f, width * 0.6f)
+
+                    // Light Violet Glow
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(Color(0xFFEADDFF).copy(alpha = 0.35f), Color.Transparent),
+                            center = Offset(width * 0.2f + animOffset1, height * 0.25f),
+                            radius = r1
+                        ),
                         center = Offset(width * 0.2f + animOffset1, height * 0.25f),
-                        radius = width * 0.5f
-                    ),
-                    center = Offset(width * 0.2f + animOffset1, height * 0.25f),
-                    radius = width * 0.5f
-                )
-                // Light Pink Glow
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFFFFD8E4).copy(alpha = 0.3f), Color.Transparent),
+                        radius = r1
+                    )
+                    // Light Pink Glow
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(Color(0xFFFFD8E4).copy(alpha = 0.3f), Color.Transparent),
+                            center = Offset(width * 0.8f - animOffset2, height * 0.65f),
+                            radius = r2
+                        ),
                         center = Offset(width * 0.8f - animOffset2, height * 0.65f),
-                        radius = width * 0.6f
-                    ),
-                    center = Offset(width * 0.8f - animOffset2, height * 0.65f),
-                    radius = width * 0.6f
-                )
+                        radius = r2
+                    )
+                }
             }
         }
         content()
@@ -793,29 +807,66 @@ fun CreatorProfileDialog(
                 .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f), RoundedCornerShape(28.dp))
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // Cover Banner + Overlapping Avatar Block
                 Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.TopEnd
-                ) {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close details")
-                    }
-                }
-
-                AsyncImage(
-                    model = currentProfile.avatarUrl.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100" },
-                    contentDescription = "Creator Avatar",
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(90.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                )
+                        .fillMaxWidth()
+                        .height(175.dp)
+                ) {
+                    // Cover Banner Block with close button overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .align(Alignment.TopCenter)
+                    ) {
+                        AsyncImage(
+                            model = if (currentProfile.bannerUrl.isNotBlank()) currentProfile.bannerUrl else "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
+                            contentDescription = "Creator Banner",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color.Transparent,
+                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                                        )
+                                    )
+                                )
+                        )
+                        IconButton(
+                            onClick = onDismiss,
+                            colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(12.dp)
+                                .size(36.dp)
+                        ) {
+                            Icon(Icons.Rounded.Close, contentDescription = "Close details", modifier = Modifier.size(18.dp))
+                        }
+                    }
+
+                    // Overlapping avatar aligned at the bottom center of the parent 175dp Box (making half of it sit over the 130dp banner)
+                    AsyncImage(
+                        model = currentProfile.avatarUrl.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100" },
+                        contentDescription = "Creator Avatar",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(90.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(4.dp)
+                            .clip(CircleShape)
+                            .align(Alignment.BottomCenter)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -1079,7 +1130,134 @@ enum class Screen(val title: String) {
     EXPLORE("Explore"),
     SEARCH("Search"),
     ACTIVITY("Activity"),
-    PROFILE("Profile")
+    PROFILE("Profile"),
+    CREATE_POST("Create Post"),
+    EDIT_PROFILE("Update Profile"),
+    POST_DETAIL("Post Detail")
+}
+
+@Composable
+fun InAppPushNotificationBanner(
+    notification: ActivityEntity,
+    onDismiss: () -> Unit,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .widthIn(max = 480.dp)
+            .padding(12.dp)
+            .clickable(onClick = onClick)
+            .testTag("in_app_push_banner"),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.inverseOnSurface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(contentAlignment = Alignment.BottomEnd, modifier = Modifier.size(42.dp)) {
+                if (!notification.actorAvatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = notification.actorAvatarUrl,
+                        contentDescription = "Notification profile",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Rounded.Person, 
+                                contentDescription = "Actor", 
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+                
+                // Nest status badge matches action type
+                val badgeIcon = when (notification.type) {
+                    "like" -> Icons.Rounded.Favorite
+                    "comment" -> Icons.Rounded.ChatBubble
+                    "follow" -> Icons.Rounded.PersonAdd
+                    else -> Icons.Rounded.Notifications
+                }
+                val badgeBg = when (notification.type) {
+                    "like" -> Color(0xFFE91E63)
+                    "comment" -> Color(0xFF00B074)
+                    "follow" -> Color(0xFF2196F3)
+                    else -> MaterialTheme.colorScheme.primary
+                }
+                Surface(
+                    shape = CircleShape,
+                    color = badgeBg,
+                    modifier = Modifier
+                        .size(16.dp)
+                        .offset(x = 2.dp, y = 2.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            badgeIcon, 
+                            contentDescription = null, 
+                            tint = Color.White, 
+                            modifier = Modifier.size(9.dp)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(12.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "@${notification.actorUsername}",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.inverseSurface
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "• Now",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.5f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = notification.content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.85f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            
+            IconButton(
+                onClick = onDismiss, 
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.08f), CircleShape)
+            ) {
+                Icon(
+                    Icons.Rounded.Close, 
+                    contentDescription = "Close push banner", 
+                    tint = MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.6f), 
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1094,13 +1272,24 @@ fun MainApp(viewModel: SocialViewModel) {
     val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
 
     var activeScreen by remember { mutableStateOf(Screen.EXPLORE) }
-    var showCreatePost by remember { mutableStateOf(false) }
+    var selectedPostId by remember { mutableStateOf<String?>(null) }
     var composeImagePrefill by remember { mutableStateOf<String?>(null) }
     var activeUserDetailProfile by remember { mutableStateOf<ProfileEntity?>(null) }
     
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
+
+    // Request native runtime permission for system notifications on modern Android 13+ devices
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        val launcher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+            onResult = { isGranted -> }
+        )
+        LaunchedEffect(Unit) {
+            launcher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     // Detect width to show responsive Layout: bottom bar for Mobile, navigation rail for Desktop/Web
     val configuration = LocalConfiguration.current
@@ -1114,71 +1303,74 @@ fun MainApp(viewModel: SocialViewModel) {
         }
     }
 
-    Scaffold(
-        floatingActionButton = {
-            if (activeScreen == Screen.EXPLORE || activeScreen == Screen.SEARCH) {
-                ExtendedFloatingActionButton(
-                    onClick = { showCreatePost = true },
-                    shape = RoundedCornerShape(28.dp),
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
-                    modifier = Modifier.testTag("create_post_fab")
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = "Publish Post")
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Express", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+    val currentPushNotification by viewModel.currentPushNotification.collectAsStateWithLifecycle()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            floatingActionButton = {
+                if (activeScreen == Screen.EXPLORE || activeScreen == Screen.SEARCH) {
+                    ExtendedFloatingActionButton(
+                        onClick = { activeScreen = Screen.CREATE_POST },
+                        shape = RoundedCornerShape(28.dp),
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                        modifier = Modifier.testTag("create_post_fab")
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = "Publish Post")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Express", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    }
                 }
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        bottomBar = {
-            if (!isWideScreen) {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 8.dp
-                ) {
-                    NavigationBarItem(
-                        selected = activeScreen == Screen.EXPLORE,
-                        onClick = { activeScreen = Screen.EXPLORE },
-                        icon = { Icon(if (activeScreen == Screen.EXPLORE) Icons.Filled.Home else Icons.Outlined.Home, contentDescription = "Feed") },
-                        label = { Text("Feed") },
-                        modifier = Modifier.testTag("nav_explore")
-                    )
-                    NavigationBarItem(
-                        selected = activeScreen == Screen.SEARCH,
-                        onClick = { activeScreen = Screen.SEARCH },
-                        icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
-                        label = { Text("Search") },
-                        modifier = Modifier.testTag("nav_search")
-                    )
-                    NavigationBarItem(
-                        selected = activeScreen == Screen.ACTIVITY,
-                        onClick = { activeScreen = Screen.ACTIVITY },
-                        icon = {
-                            BadgedBox(badge = {
-                                val unread = activities.size
-                                if (unread > 0) {
-                                    Badge { Text("$unread") }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            bottomBar = {
+                if (!isWideScreen && activeScreen in listOf(Screen.EXPLORE, Screen.SEARCH, Screen.ACTIVITY, Screen.PROFILE)) {
+                    NavigationBar(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        tonalElevation = 8.dp
+                    ) {
+                        NavigationBarItem(
+                            selected = activeScreen == Screen.EXPLORE,
+                            onClick = { activeScreen = Screen.EXPLORE },
+                            icon = { Icon(if (activeScreen == Screen.EXPLORE) Icons.Filled.Home else Icons.Outlined.Home, contentDescription = "Feed") },
+                            label = { Text("Feed") },
+                            modifier = Modifier.testTag("nav_explore")
+                        )
+                        NavigationBarItem(
+                            selected = activeScreen == Screen.SEARCH,
+                            onClick = { activeScreen = Screen.SEARCH },
+                            icon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
+                            label = { Text("Search") },
+                            modifier = Modifier.testTag("nav_search")
+                        )
+                        NavigationBarItem(
+                            selected = activeScreen == Screen.ACTIVITY,
+                            onClick = { activeScreen = Screen.ACTIVITY },
+                            icon = {
+                                BadgedBox(badge = {
+                                    val unread = activities.size
+                                    if (unread > 0) {
+                                        Badge { Text("$unread") }
+                                    }
+                                }) {
+                                    Icon(if (activeScreen == Screen.ACTIVITY) Icons.Filled.Notifications else Icons.Outlined.Notifications, contentDescription = "Notifications")
                                 }
-                            }) {
-                                Icon(if (activeScreen == Screen.ACTIVITY) Icons.Filled.Notifications else Icons.Outlined.Notifications, contentDescription = "Notifications")
-                            }
-                        },
-                        label = { Text("Activity") },
-                        modifier = Modifier.testTag("nav_activity")
-                    )
-                    NavigationBarItem(
-                        selected = activeScreen == Screen.PROFILE,
-                        onClick = { activeScreen = Screen.PROFILE },
-                        icon = { Icon(if (activeScreen == Screen.PROFILE) Icons.Filled.Person else Icons.Outlined.Person, contentDescription = "Profile") },
-                        label = { Text("Profile") },
-                        modifier = Modifier.testTag("nav_profile")
-                    )
+                            },
+                            label = { Text("Activity") },
+                            modifier = Modifier.testTag("nav_activity")
+                        )
+                        NavigationBarItem(
+                            selected = activeScreen == Screen.PROFILE,
+                            onClick = { activeScreen = Screen.PROFILE },
+                            icon = { Icon(if (activeScreen == Screen.PROFILE) Icons.Filled.Person else Icons.Outlined.Person, contentDescription = "Profile") },
+                            label = { Text("Profile") },
+                            modifier = Modifier.testTag("nav_profile")
+                        )
+                    }
                 }
             }
-        }
-    ) { innerPadding ->
+        ) { innerPadding ->
         val isDark = isSystemInDarkTheme()
         val bgColor = MaterialTheme.colorScheme.background
         val appScreenBg = remember(isDark, bgColor) {
@@ -1199,7 +1391,7 @@ fun MainApp(viewModel: SocialViewModel) {
                 .background(appScreenBg)
         ) {
             // Tablet & Web Left Navigation Rail
-            if (isWideScreen) {
+            if (isWideScreen && activeScreen in listOf(Screen.EXPLORE, Screen.SEARCH, Screen.ACTIVITY, Screen.PROFILE)) {
                 NavigationRail(
                     containerColor = MaterialTheme.colorScheme.surface,
                     header = {
@@ -1313,7 +1505,12 @@ fun MainApp(viewModel: SocialViewModel) {
                                     } else {
                                         Toast.makeText(context, "No user @$cleanHandle exists on Pulse.", Toast.LENGTH_SHORT).show()
                                     }
-                                }
+                                },
+                                onPostClick = { postId ->
+                                    selectedPostId = postId
+                                    activeScreen = Screen.POST_DETAIL
+                                },
+                                onDeleteComment = { pid, cid -> viewModel.deleteComment(pid, cid) }
                             )
                         }
                         Screen.SEARCH -> {
@@ -1339,7 +1536,12 @@ fun MainApp(viewModel: SocialViewModel) {
                                     } else {
                                         Toast.makeText(context, "No user @$cleanHandle exists on Pulse.", Toast.LENGTH_SHORT).show()
                                     }
-                                }
+                                },
+                                onPostClick = { postId ->
+                                    selectedPostId = postId
+                                    activeScreen = Screen.POST_DETAIL
+                                },
+                                onDeleteComment = { pid, cid -> viewModel.deleteComment(pid, cid) }
                             )
                         }
                         Screen.ACTIVITY -> {
@@ -1348,19 +1550,20 @@ fun MainApp(viewModel: SocialViewModel) {
                                 onMarkAllRead = { viewModel.markAllNotificationsRead() },
                                 onUseImage = { imageUrl ->
                                     composeImagePrefill = imageUrl
-                                    showCreatePost = true
+                                    activeScreen = Screen.CREATE_POST
                                     scope.launch {
                                         snackbarHostState.showSnackbar("📷 Loaded attachment into Express composer!")
                                     }
-                                }
+                                },
+                                onTriggerSim = { viewModel.triggerRandomSimNotification() }
                             )
                         }
                         Screen.PROFILE -> {
                             ProfileScreen(
                                 myProfile = myProfile,
                                 posts = posts,
-                                onUpdateProfile = { name, handle, bio, url ->
-                                    viewModel.updateMyProfile(handle, name, bio, url)
+                                onUpdateProfile = { name, handle, bio, url, bannerUrl ->
+                                    viewModel.updateMyProfile(handle, name, bio, url, bannerUrl)
                                 },
                                 viewModel = viewModel,
                                 onCreatorClick = { activeUserDetailProfile = it },
@@ -1376,32 +1579,80 @@ fun MainApp(viewModel: SocialViewModel) {
                                     } else {
                                         Toast.makeText(context, "No user @$cleanHandle exists on Pulse.", Toast.LENGTH_SHORT).show()
                                     }
+                                },
+                                onEditProfileClick = {
+                                    activeScreen = Screen.EDIT_PROFILE
+                                },
+                                onPostClick = { postId ->
+                                    selectedPostId = postId
+                                    activeScreen = Screen.POST_DETAIL
+                                },
+                                onDeleteComment = { pid, cid -> viewModel.deleteComment(pid, cid) }
+                            )
+                        }
+                        Screen.CREATE_POST -> {
+                            CreatePostScreen(
+                                prefilledImageUrl = composeImagePrefill,
+                                onDismiss = {
+                                    activeScreen = Screen.EXPLORE
+                                    composeImagePrefill = null
+                                },
+                                onPublish = { text, image ->
+                                    viewModel.createPost(text, image)
+                                    activeScreen = Screen.EXPLORE
+                                    composeImagePrefill = null
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("🚀 Passion thread successfully published!")
+                                    }
                                 }
                             )
+                        }
+                        Screen.EDIT_PROFILE -> {
+                            if (myProfile != null) {
+                                EditProfileScreen(
+                                    profile = myProfile!!,
+                                    onDismiss = { activeScreen = Screen.PROFILE },
+                                    onSave = { name, handle, bio, avatar, banner ->
+                                        viewModel.updateMyProfile(handle, name, bio, avatar, banner)
+                                        activeScreen = Screen.PROFILE
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("✨ Personal style and profile sync card saved!")
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        Screen.POST_DETAIL -> {
+                            val detailPost = posts.find { it.id == selectedPostId }
+                            if (detailPost != null) {
+                                PostDetailScreen(
+                                    post = detailPost,
+                                    allProfiles = allProfiles,
+                                    onBack = { activeScreen = Screen.EXPLORE },
+                                    onLike = { viewModel.toggleLike(detailPost.id) },
+                                    onAddComment = { viewModel.addComment(detailPost.id, it) },
+                                    onDeleteComment = { viewModel.deleteComment(detailPost.id, it) },
+                                    myProfile = myProfile
+                                )
+                            } else {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("Selected passion thread was deleted or is not cached.", style = MaterialTheme.typography.bodyLarge)
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(onClick = { activeScreen = Screen.EXPLORE }) {
+                                            Text("Return to Stream")
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
 
-        // Create Post Overlay Sheet dialog
-        if (showCreatePost) {
-            CreatePostDialog(
-                prefilledImageUrl = composeImagePrefill,
-                onDismiss = {
-                    showCreatePost = false
-                    composeImagePrefill = null
-                },
-                onPublish = { text, image ->
-                    viewModel.createPost(text, image)
-                    showCreatePost = false
-                    composeImagePrefill = null
-                    scope.launch {
-                        snackbarHostState.showSnackbar("🚀 Expression published!")
-                    }
-                }
-            )
-        }
+
 
         activeUserDetailProfile?.let { profile ->
             CreatorProfileDialog(
@@ -1409,6 +1660,25 @@ fun MainApp(viewModel: SocialViewModel) {
                 onDismiss = { activeUserDetailProfile = null },
                 viewModel = viewModel
             )
+        }
+
+        // In-App dynamic sliding overlay heads-up push banner
+        currentPushNotification?.let { notification ->
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .zIndex(10000f)
+            ) {
+                InAppPushNotificationBanner(
+                    notification = notification,
+                    onDismiss = { viewModel.dismissPushNotification() },
+                    onClick = {
+                        activeScreen = Screen.ACTIVITY
+                        viewModel.dismissPushNotification()
+                    }
+                )
+            }
         }
     }
 }
@@ -1429,7 +1699,9 @@ fun ExploreScreen(
     onTriggerSync: () -> Unit,
     onCreatorClick: (ProfileEntity) -> Unit,
     onHashtagClick: (String) -> Unit,
-    onMentionClick: (String) -> Unit
+    onMentionClick: (String) -> Unit,
+    onPostClick: (String) -> Unit,
+    onDeleteComment: ((String, String) -> Unit)? = null
 ) {
     var selectedFeedTab by remember { mutableStateOf(0) }
     var isRefreshingSimulated by remember { mutableStateOf(false) }
@@ -1516,36 +1788,6 @@ fun ExploreScreen(
                             modifier = Modifier.size(24.dp)
                         )
                     }
-                    
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    // Database Connection indicator pill
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (supabaseConfigured) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier.clickable { onTriggerSync() }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isSyncing) MaterialTheme.colorScheme.tertiary
-                                        else if (supabaseConfigured) Color(0xFF00C853)
-                                        else MaterialTheme.colorScheme.outline
-                                    )
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = if (isSyncing) "Syncing..." else if (supabaseConfigured) "Supabase" else "Local",
-                                style = MaterialTheme.typography.labelLarge.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -1620,25 +1862,85 @@ fun ExploreScreen(
 
         if (filteredPosts.isEmpty()) {
             item {
-                Box(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(48.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(24.dp)
+                        .testTag("empty_feed_card"),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Rounded.CloudOff,
-                            contentDescription = "Empty feed",
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Rounded.CloudOff,
+                                contentDescription = "Empty feed",
+                                modifier = Modifier.size(36.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(20.dp))
+                        
                         Text(
-                            if (selectedFeedTab == 1) "Nobody you follow has expressed yet." else "Nothing expressed yet.",
-                            style = MaterialTheme.typography.titleLarge,
+                            if (selectedFeedTab == 1) "Chamber is silent..." else "A blank canvas awaits!",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                             textAlign = TextAlign.Center
                         )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            if (selectedFeedTab == 1) "Creators you follow haven't voiced their expressions yet. Try exploring the public stream!" else "Be the first to spark a trending conversation. Share what makes you passionate today.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    isRefreshingSimulated = true
+                                    scope.launch {
+                                        onTriggerSync()
+                                        kotlinx.coroutines.delay(1200)
+                                        isRefreshingSimulated = false
+                                    }
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Sync Feed")
+                            }
+                            
+                            Button(
+                                onClick = {
+                                    // opens Compose modal Dialog
+                                    // we can trigger the floating menu flow
+                                    Toast.makeText(context, "Click the '+' Floating Icon below to voice your thoughts!", Toast.LENGTH_LONG).show()
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Start Thread")
+                            }
+                        }
                     }
                 }
             }
@@ -1653,7 +1955,9 @@ fun ExploreScreen(
                     myProfile = myProfile,
                     onCreatorClick = onCreatorClick,
                     onHashtagClick = onHashtagClick,
-                    onMentionClick = onMentionClick
+                    onMentionClick = onMentionClick,
+                    onPostClick = { onPostClick(post.id) },
+                    onDeleteComment = { commentId -> onDeleteComment?.invoke(post.id, commentId) }
                 )
             }
         }
@@ -1784,7 +2088,9 @@ fun PostCard(
     myProfile: ProfileEntity?,
     onCreatorClick: (ProfileEntity) -> Unit,
     onHashtagClick: (String) -> Unit,
-    onMentionClick: (String) -> Unit
+    onMentionClick: (String) -> Unit,
+    onPostClick: (() -> Unit)? = null,
+    onDeleteComment: ((String) -> Unit)? = null
 ) {
     var expandedComments by remember { mutableStateOf(false) }
     var newCommentText by remember { mutableStateOf("") }
@@ -1800,6 +2106,7 @@ fun PostCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 12.dp)
+            .clickable { onPostClick?.invoke() }
             .testTag("post_card_${post.id}"),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(
@@ -1870,7 +2177,7 @@ fun PostCard(
                         }
                     }
                     Text(
-                        "@${post.userUsername}",
+                        "@${post.userUsername} • ${formatRelativeTime(post.createdAt)}",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
@@ -2018,12 +2325,21 @@ fun PostCard(
                                         },
                                     verticalAlignment = Alignment.Top
                                 ) {
+                                    if (comment.content.trim().startsWith("@")) {
+                                        Icon(
+                                            imageVector = Icons.Rounded.KeyboardArrowRight,
+                                            contentDescription = "Reply alignment",
+                                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                            modifier = Modifier.padding(end = 4.dp, top = 2.dp).size(16.dp)
+                                        )
+                                    }
+
                                     AsyncImage(
                                         model = comment.avatarUrl.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100" },
                                         contentDescription = "Commenter Avatar",
                                         contentScale = ContentScale.Crop,
                                         modifier = Modifier
-                                            .size(32.dp)
+                                            .size(28.dp)
                                             .clip(CircleShape)
                                             .background(MaterialTheme.colorScheme.surfaceVariant)
                                     )
@@ -2043,11 +2359,38 @@ fun PostCard(
                                                     modifier = Modifier.size(13.dp)
                                                 )
                                             }
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                "Reply",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                                    fontWeight = FontWeight.Bold
+                                                ),
+                                                modifier = Modifier.clickable {
+                                                    newCommentText = "@${comment.username} "
+                                                }
+                                            )
                                         }
                                         Text(
                                             comment.content,
                                             style = MaterialTheme.typography.bodyMedium
                                         )
+                                    }
+
+                                    val canDeleteComment = myProfile != null && (comment.userId == myProfile.id || comment.username == myProfile.username || post.userId == myProfile.id)
+                                    if (canDeleteComment && onDeleteComment != null) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        IconButton(
+                                            onClick = { onDeleteComment(comment.id) },
+                                            modifier = Modifier.size(28.dp).testTag("delete_comment_${comment.id}")
+                                        ) {
+                                            Icon(
+                                                Icons.Rounded.DeleteOutline,
+                                                contentDescription = "Delete comment",
+                                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -2113,7 +2456,9 @@ fun SearchScreen(
     myProfile: ProfileEntity?,
     onCreatorClick: (ProfileEntity) -> Unit,
     onHashtagClick: (String) -> Unit,
-    onMentionClick: (String) -> Unit
+    onMentionClick: (String) -> Unit,
+    onPostClick: (String) -> Unit,
+    onDeleteComment: ((String, String) -> Unit)? = null
 ) {
     val presetTags = listOf("#M3Design", "#Adventure", "#Brutalist", "#Berlin", "#Travel")
 
@@ -2220,7 +2565,9 @@ fun SearchScreen(
                         myProfile = myProfile,
                         onCreatorClick = onCreatorClick,
                         onHashtagClick = onHashtagClick,
-                        onMentionClick = onMentionClick
+                        onMentionClick = onMentionClick,
+                        onPostClick = { onPostClick(post.id) },
+                        onDeleteComment = { commentId -> onDeleteComment?.invoke(post.id, commentId) }
                     )
                 }
             }
@@ -2235,7 +2582,8 @@ fun SearchScreen(
 fun ActivityScreen(
     activities: List<ActivityEntity>,
     onMarkAllRead: () -> Unit,
-    onUseImage: (String) -> Unit
+    onUseImage: (String) -> Unit,
+    onTriggerSim: () -> Unit
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf("All Workspace") }
@@ -2283,6 +2631,23 @@ fun ActivityScreen(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Bolt Sim Trigger Button
+                IconButton(
+                    onClick = onTriggerSim,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(MaterialTheme.colorScheme.secondaryContainer, CircleShape)
+                        .testTag("simulation_trigger")
+                ) {
+                    Icon(
+                        Icons.Rounded.Bolt,
+                        contentDescription = "Simulate Activity Event",
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(8.dp))
+
                 // Filter icon option
                 IconButton(
                     onClick = { /* Option click */ },
@@ -2296,6 +2661,7 @@ fun ActivityScreen(
                 }
                 
                 if (activities.any { !it.isRead }) {
+                    Spacer(modifier = Modifier.width(8.dp))
                     IconButton(
                         onClick = onMarkAllRead,
                         modifier = Modifier.size(40.dp)
@@ -3020,19 +3386,29 @@ fun ActivityItemCard(
 fun ProfileScreen(
     myProfile: ProfileEntity?,
     posts: List<PostEntity>,
-    onUpdateProfile: (String, String, String, String) -> Unit,
+    onUpdateProfile: (String, String, String, String, String) -> Unit,
     viewModel: SocialViewModel,
     onCreatorClick: (ProfileEntity) -> Unit,
     onHashtagClick: (String) -> Unit,
-    onMentionClick: (String) -> Unit
+    onMentionClick: (String) -> Unit,
+    onEditProfileClick: () -> Unit,
+    onPostClick: (String) -> Unit,
+    onDeleteComment: ((String, String) -> Unit)? = null
 ) {
-    var showEditProfile by remember { mutableStateOf(false) }
     var showCloudSettings by remember { mutableStateOf(false) }
     var showFollowListCategory by remember { mutableStateOf<String?>(null) } // "Followers" or "Following" or null
+    var activeTab by remember { mutableStateOf("Expressions") } // "Expressions" or "Liked Ledger"
 
     val allProfiles by viewModel.allProfiles.collectAsStateWithLifecycle()
+    
+    // Filter list representing user own posts
     val myPosts = remember(posts, myProfile) {
         if (myProfile == null) emptyList() else posts.filter { it.userId == myProfile.id }
+    }
+    
+    // Filter list representing posts Jordan has liked
+    val myLikedPosts = remember(posts, myProfile) {
+        if (myProfile == null) emptyList() else posts.filter { it.isLikedByMe }
     }
 
     if (myProfile == null) {
@@ -3057,7 +3433,7 @@ fun ProfileScreen(
             ) {
                 // Background cover premium image
                 AsyncImage(
-                    model = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
+                    model = if (myProfile.bannerUrl.isNotBlank()) myProfile.bannerUrl else "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800",
                     contentDescription = "Cover Image",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
@@ -3075,18 +3451,6 @@ fun ProfileScreen(
                             )
                         )
                 )
-
-                // Settings icon floating on cover
-                IconButton(
-                    onClick = { showCloudSettings = true },
-                    colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)),
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .testTag("cloud_settings_button")
-                ) {
-                    Icon(Icons.Filled.CloudSync, contentDescription = "Supabase Settings")
-                }
             }
         }
 
@@ -3116,7 +3480,7 @@ fun ProfileScreen(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Button(
-                            onClick = { showEditProfile = true },
+                            onClick = { onEditProfileClick() },
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.testTag("edit_profile_button")
                         ) {
@@ -3187,18 +3551,46 @@ fun ProfileScreen(
             }
         }
 
-        // Section title: My Posts
+        // Section Tabs Switcher representing complete management sub-system
         item {
-            Text(
-                "My Expressions",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.W900),
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .offset(y = (-30).dp)
-            )
+                    .offset(y = (-30).dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val profileTabs = listOf("Expressions", "Liked Ledger")
+                profileTabs.forEach { tab ->
+                    val isSelected = activeTab == tab
+                    val buttonBg = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    val textColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                    
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { activeTab = tab }
+                            .testTag("profile_tab_$tab"),
+                        shape = RoundedCornerShape(12.dp),
+                        color = buttonBg
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(vertical = 12.dp)) {
+                            Text(
+                                text = tab, 
+                                fontWeight = FontWeight.Bold, 
+                                color = textColor, 
+                                fontSize = 13.sp,
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                        }
+                    }
+                }
+            }
         }
 
-        if (myPosts.isEmpty()) {
+        val listToRender = if (activeTab == "Expressions") myPosts else myLikedPosts
+
+        if (listToRender.isEmpty()) {
             item {
                 Box(
                     modifier = Modifier
@@ -3208,7 +3600,7 @@ fun ProfileScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "You haven't expressed anything yet. Share your first thought!",
+                        text = if (activeTab == "Expressions") "You haven't expressed anything yet. Share your first thought!" else "Your activity ledger has no liked posts yet.",
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -3216,7 +3608,7 @@ fun ProfileScreen(
                 }
             }
         } else {
-            items(myPosts, key = { it.id }) { post ->
+            items(listToRender, key = { it.id }) { post ->
                 Box(modifier = Modifier.offset(y = (-30).dp)) {
                     PostCard(
                         post = post,
@@ -3227,7 +3619,9 @@ fun ProfileScreen(
                         myProfile = myProfile,
                         onCreatorClick = onCreatorClick,
                         onHashtagClick = onHashtagClick,
-                        onMentionClick = onMentionClick
+                        onMentionClick = onMentionClick,
+                        onPostClick = { onPostClick(post.id) },
+                        onDeleteComment = { commentId -> onDeleteComment?.invoke(post.id, commentId) }
                     )
                 }
             }
@@ -3244,17 +3638,7 @@ fun ProfileScreen(
         )
     }
 
-    // Edit Profile Modal Dialog
-    if (showEditProfile) {
-        EditProfileDialog(
-            profile = myProfile,
-            onDismiss = { showEditProfile = false },
-            onSave = { name, handle, bio, avatar ->
-                onUpdateProfile(name, handle, bio, avatar)
-                showEditProfile = false
-            }
-        )
-    }
+
 
     // Supabase Cloud settings sheet Dialog
     if (showCloudSettings) {
@@ -3295,13 +3679,29 @@ fun CreatePostDialog(
     onDismiss: () -> Unit,
     onPublish: (String, String?) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val draftPrefs = remember { context.getSharedPreferences("pulse_draft_prefs", android.content.Context.MODE_PRIVATE) }
+    val draftContent = remember { draftPrefs.getString("draft_content", "") ?: "" }
+    val draftImageUrl = remember { draftPrefs.getString("draft_image_url", "") ?: "" }
+
     var contentText by remember { mutableStateOf("") }
     var imageUrl by remember { mutableStateOf(prefilledImageUrl ?: "") }
+    var showDraftPill by remember { mutableStateOf(draftContent.isNotEmpty()) }
+
+    // Real-time draft autosave
+    androidx.compose.runtime.LaunchedEffect(contentText, imageUrl) {
+        if (contentText.isNotEmpty() || imageUrl.isNotEmpty()) {
+            draftPrefs.edit()
+                .putString("draft_content", contentText)
+                .putString("draft_image_url", imageUrl)
+                .apply()
+        }
+    }
 
     val stockImages = listOf(
         "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500" to "Beach Sunrise",
-        "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=500" to "Snow Mountains",
-        "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500" to "Forest pathway",
+        "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=500" to "Snow Peak",
+        "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500" to "Forest",
         "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500" to "Foggy Meadow"
     )
 
@@ -3312,91 +3712,66 @@ fun CreatePostDialog(
                 .padding(vertical = 12.dp)
                 .testTag("create_post_dialog_content"),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    "New Expression",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.W900)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Input Content
-                OutlinedTextField(
-                    value = contentText,
-                    onValueChange = { contentText = it },
-                    placeholder = { Text("What's on your mind? Capture the perspective...") },
+                // LIVE POST FEED PREVIEW HEADER
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp)
-                        .testTag("post_content_input"),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Image URL input
-                OutlinedTextField(
-                    value = imageUrl,
-                    onValueChange = { imageUrl = it },
-                    placeholder = { Text("Visual artwork URL (Optional)") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("post_image_url_input"),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Stock travel themes selector
-                Text(
-                    "Select a scenic template background:",
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                        .padding(16.dp)
                 ) {
-                    stockImages.forEach { pair ->
-                        Card(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(50.dp)
-                                .clickable { imageUrl = pair.first },
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                AsyncImage(
-                                    model = pair.first,
-                                    contentDescription = pair.second,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Black.copy(alpha = 0.3f)),
-                                    contentAlignment = Alignment.Center
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            // Mock Header
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    modifier = Modifier.size(36.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer
                                 ) {
-                                    Text(
-                                        pair.second.split(" ").first(),
-                                        style = MaterialTheme.typography.labelLarge.copy(color = Color.White),
-                                        textAlign = TextAlign.Center
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text("J", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text("Jordan Vance", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                    Text("@jordan • Just now", style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray))
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            
+                            // Content
+                            Text(
+                                text = if (contentText.isBlank()) "Expression preview appears here..." else contentText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (contentText.isBlank()) Color.Gray else MaterialTheme.colorScheme.onSurface,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            
+                            // Visual attachment preview
+                            if (imageUrl.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().height(100.dp),
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    AsyncImage(
+                                        model = imageUrl,
+                                        contentDescription = "Attachment preview",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
                                     )
                                 }
                             }
@@ -3404,12 +3779,180 @@ fun CreatePostDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                // SCROLLABLE FORM CONTROLS
+                Column(
+                    modifier = Modifier
+                        .heightIn(max = 350.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(24.dp)
+                ) {
+                    Text(
+                        text = "Compose Expression",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.W900),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
 
-                // Publish Action Row
+                    if (showDraftPill && draftContent.isNotEmpty()) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Rounded.Drafts,
+                                        contentDescription = "Draft Detected",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "Unsaved draft found!",
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    TextButton(
+                                        onClick = {
+                                            contentText = draftContent
+                                            if (draftImageUrl.isNotEmpty()) {
+                                                imageUrl = draftImageUrl
+                                            }
+                                            showDraftPill = false
+                                        },
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
+                                        modifier = Modifier.height(28.dp)
+                                    ) {
+                                        Text("Restore", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold))
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            draftPrefs.edit().clear().apply()
+                                            showDraftPill = false
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.DeleteOutline,
+                                            contentDescription = "Clear Draft",
+                                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Input Content
+                    OutlinedTextField(
+                        value = contentText,
+                        onValueChange = { contentText = it },
+                        placeholder = { Text("What perspective are you sharing Jordan? Share your thoughts...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(110.dp)
+                            .testTag("post_content_input"),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f)
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Stock travel themes selector
+                    Text(
+                        text = "Or choose a beautiful template backdrop:",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        stockImages.forEach { pair ->
+                            val isSelected = imageUrl == pair.first
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                                    .clickable { imageUrl = pair.first }
+                                    .border(
+                                        width = if (isSelected) 3.dp else 0.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        shape = RoundedCornerShape(8.dp)
+                                    ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    AsyncImage(
+                                        model = pair.first,
+                                        contentDescription = pair.second,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Black.copy(alpha = 0.4f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            pair.second.split(" ").first(),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Black
+                                            ),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Image URL input - Collapsible Advanced Control
+                    var showCustomImageOption by remember { mutableStateOf(false) }
+                    TextButton(onClick = { showCustomImageOption = !showCustomImageOption }) {
+                        Text(if (showCustomImageOption) "Hide custom photo input" else "Or provide a custom image URL...")
+                    }
+
+                    if (showCustomImageOption) {
+                        OutlinedTextField(
+                            value = imageUrl,
+                            onValueChange = { imageUrl = it },
+                            placeholder = { Text("https://example.com/artwork.jpg") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("post_image_url_input"),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f)
+                            )
+                        )
+                    }
+                }
+
+                // BOTTOM ACTION BAR
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
                         Text("Cancel")
@@ -3418,6 +3961,7 @@ fun CreatePostDialog(
                     Button(
                         onClick = {
                             if (contentText.isNotBlank()) {
+                                draftPrefs.edit().clear().apply()
                                 onPublish(contentText, imageUrl.ifBlank { null })
                             }
                         },
@@ -3440,12 +3984,26 @@ fun CreatePostDialog(
 fun EditProfileDialog(
     profile: ProfileEntity,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, String) -> Unit
+    onSave: (String, String, String, String, String) -> Unit
 ) {
     var name by remember { mutableStateOf(profile.fullName) }
     var username by remember { mutableStateOf(profile.username) }
     var bio by remember { mutableStateOf(profile.bio) }
     var avatar by remember { mutableStateOf(profile.avatarUrl) }
+    var banner by remember { mutableStateOf(profile.bannerUrl) }
+
+    val scenicBanners = listOf(
+        "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=600" to "Cosmic",
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" to "Misty",
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600" to "Brutalist",
+        "https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?w=600" to "Cyber"
+    )
+    val profileAvatars = listOf(
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" to "Creative",
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" to "Slick",
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" to "Active",
+        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150" to "Gradient"
+    )
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -3454,76 +4012,252 @@ fun EditProfileDialog(
                 .padding(vertical = 12.dp)
                 .testTag("edit_profile_dialog_content"),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .padding(24.dp)
                     .fillMaxWidth()
             ) {
-                Text(
-                    "Edit Profile Card",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.W900)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Full Name
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Display Name") },
+                // LIVE PROFILE CARD RUNTIME PREVIEW
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("edit_profile_name"),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                        .height(130.dp)
+                ) {
+                    AsyncImage(
+                        model = banner.ifBlank { "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800" },
+                        contentDescription = "Cover Image live preview",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    // Dimming overlay
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(Color.Black.copy(alpha = 0.2f), Color.Black.copy(alpha = 0.75f))
+                                )
+                            )
+                    )
+                    // Overlay details preview
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        AsyncImage(
+                            model = avatar.ifBlank { "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100" },
+                            contentDescription = "Avatar Live Preview",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, Color.White, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = name.ifBlank { "Jordan Vance" },
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White,
+                                    fontSize = 15.sp
+                                )
+                            )
+                            Text(
+                                text = "@${username.ifBlank { "jordan" }}",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                )
+                            )
+                        }
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Username handle
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username Handle") },
+                // SCROLLABLE FORM SECTION
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("edit_profile_username"),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 20.dp)
+                ) {
+                    Text(
+                        text = "Customize Profile Card",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.W900),
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    // Display Name Field
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Display Name") },
+                        leadingIcon = { Icon(Icons.Rounded.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("edit_profile_name"),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
 
-                // Bio Description
-                OutlinedTextField(
-                    value = bio,
-                    onValueChange = { bio = it },
-                    label = { Text("Biography") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .testTag("edit_profile_bio"),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    // Username Handle Field
+                    OutlinedTextField(
+                        value = username,
+                        onValueChange = { username = it },
+                        label = { Text("Username Handle") },
+                        leadingIcon = { Icon(Icons.Rounded.AlternateEmail, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("edit_profile_username"),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
 
-                // Avatar URL string
-                OutlinedTextField(
-                    value = avatar,
-                    onValueChange = { avatar = it },
-                    label = { Text("Avatar Photo URL") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("edit_profile_avatar"),
-                    shape = RoundedCornerShape(12.dp)
-                )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                Spacer(modifier = Modifier.height(24.dp))
+                    // Biography Field
+                    OutlinedTextField(
+                        value = bio,
+                        onValueChange = { bio = it },
+                        label = { Text("Biography / Short Status") },
+                        leadingIcon = { Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .testTag("edit_profile_bio"),
+                        shape = RoundedCornerShape(12.dp)
+                    )
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // BANNERS PRESETS SELECTOR
+                    Text(
+                        text = "Scenic Cover Presets:",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        scenicBanners.forEach { pair ->
+                            val isSelected = banner == pair.first
+                            Card(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(44.dp)
+                                    .clickable { banner = pair.first }
+                                    .border(
+                                        width = if (isSelected) 3.dp else 0.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        shape = RoundedCornerShape(8.dp)
+                                    ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Box(modifier = Modifier.fillMaxSize()) {
+                                    AsyncImage(
+                                        model = pair.first,
+                                        contentDescription = pair.second,
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Black.copy(alpha = 0.4f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = pair.second,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Black
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // AVATAR PRESETS SELECTOR
+                    Text(
+                        text = "Creative Avatar Presets:",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        profileAvatars.forEach { pair ->
+                            val isSelected = avatar == pair.first
+                            AsyncImage(
+                                model = pair.first,
+                                contentDescription = pair.second,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(45.dp)
+                                    .clip(CircleShape)
+                                    .clickable { avatar = pair.first }
+                                    .border(
+                                        width = if (isSelected) 3.dp else 1.dp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                        shape = CircleShape
+                                    )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // ADVANCED MANUAL VALUES (COLLAPSIBLE / OPTIONAL IN TEXT FIELD)
+                    var showUrls by remember { mutableStateOf(false) }
+                    TextButton(
+                        onClick = { showUrls = !showUrls },
+                        modifier = Modifier.align(Alignment.Start)
+                    ) {
+                        Text(if (showUrls) "Hide original URL inputs" else "Advanced: custom photo URLs")
+                    }
+
+                    if (showUrls) {
+                        OutlinedTextField(
+                            value = avatar,
+                            onValueChange = { avatar = it },
+                            label = { Text("Avatar Photo URL") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("edit_profile_avatar"),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = banner,
+                            onValueChange = { banner = it },
+                            label = { Text("Cover Banner URL") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .testTag("edit_profile_banner"),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+
+                // BOTTOM ACTION BAR
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f))
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(onClick = onDismiss) {
                         Text("Discard")
@@ -3532,7 +4266,7 @@ fun EditProfileDialog(
                     Button(
                         onClick = {
                             if (name.isNotBlank() && username.isNotBlank()) {
-                                onSave(name, username, bio, avatar)
+                                onSave(name, username, bio, avatar, banner)
                             }
                         },
                         shape = RoundedCornerShape(16.dp),
@@ -3708,3 +4442,849 @@ fun SupabaseSettingsDialog(
         }
     }
 }
+
+// Global Relative Time Formatter
+fun formatRelativeTime(timestamp: Long): String {
+    val diff = System.currentTimeMillis() - timestamp
+    return when {
+        diff < 60000L -> "just now"
+        diff < 3600000L -> "${diff / 60000L}m ago"
+        diff < 86400000L -> "${diff / 3600000L}h ago"
+        diff < 604800000L -> "${diff / 86400000L}d ago"
+        else -> {
+            val date = java.util.Date(timestamp)
+            val sdf = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+            sdf.format(date)
+        }
+    }
+}
+
+// ==========================================
+// NEW FULL SCREENS (REDESIGNED EXQUISITELY)
+// ==========================================
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreatePostScreen(
+    prefilledImageUrl: String?,
+    onDismiss: () -> Unit,
+    onPublish: (String, String?) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val draftPrefs = remember { context.getSharedPreferences("pulse_draft_prefs", android.content.Context.MODE_PRIVATE) }
+    val draftContent = remember { draftPrefs.getString("draft_content", "") ?: "" }
+    val draftImageUrl = remember { draftPrefs.getString("draft_image_url", "") ?: "" }
+
+    var contentText by remember { mutableStateOf(draftContent) }
+    var imageUrl by remember { mutableStateOf(prefilledImageUrl ?: draftImageUrl) }
+    var showDraftPill by remember { mutableStateOf(draftContent.isNotEmpty()) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            imageUrl = uri.toString()
+        }
+    }
+
+    LaunchedEffect(contentText, imageUrl) {
+        draftPrefs.edit()
+            .putString("draft_content", contentText)
+            .putString("draft_image_url", imageUrl)
+            .apply()
+    }
+
+    val stockImages = listOf(
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500" to "Beach Sunrise",
+        "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=500" to "Snow Peak",
+        "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=500" to "Forest",
+        "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=500" to "Foggy Meadow"
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Compose Passion", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    Button(
+                        onClick = {
+                            if (contentText.isNotBlank() || imageUrl.isNotBlank()) {
+                                draftPrefs.edit().clear().apply()
+                                onPublish(contentText, imageUrl.ifBlank { null })
+                            } else {
+                                Toast.makeText(context, "Please voice some words or attach an image!", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.testTag("publish_post_button_top")
+                    ) {
+                        Text("Publish", fontWeight = FontWeight.ExtraBold)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp)
+        ) {
+            if (showDraftPill) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Rounded.EditNote, contentDescription = "Drafts", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Unsent draft loaded from local storage.", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                        TextButton(onClick = {
+                            contentText = ""
+                            imageUrl = ""
+                            draftPrefs.edit().clear().apply()
+                            showDraftPill = false
+                        }) {
+                            Text("Clear", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = contentText,
+                onValueChange = { if (it.length <= 280) contentText = it },
+                placeholder = { Text("What are you passionate about? Write here...") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .testTag("create_post_input"),
+                textStyle = MaterialTheme.typography.bodyLarge,
+                shape = RoundedCornerShape(20.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                )
+            )
+
+            Text(
+                text = "${contentText.length}/280 Characters",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (contentText.length >= 280) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(top = 6.dp)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            if (imageUrl.isNotBlank()) {
+                Text("Attached Visual preview:", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                ) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Attachment preview",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    IconButton(
+                        onClick = { imageUrl = "" },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                            .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                    ) {
+                        Icon(Icons.Rounded.Close, contentDescription = "Remove", tint = Color.White)
+                    }
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            Text("Attach Creative Media", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(80.dp)
+                        .clickable { galleryLauncher.launch("image/*") }
+                        .testTag("gallery_picker_btn"),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Rounded.PhotoLibrary, contentDescription = "Gallery", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Gallery Photo", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+
+                Card(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(80.dp)
+                        .clickable {
+                            val nextStock = stockImages.random()
+                            imageUrl = nextStock.first
+                            Toast.makeText(context, "Selected preset color: ${nextStock.second}", Toast.LENGTH_SHORT).show()
+                        },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(Icons.Rounded.ColorLens, contentDescription = "Presets", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(28.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Stock Presets", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(40.dp))
+
+            Button(
+                onClick = {
+                    if (contentText.isNotBlank() || imageUrl.isNotBlank()) {
+                        draftPrefs.edit().clear().apply()
+                        onPublish(contentText, imageUrl.ifBlank { null })
+                    } else {
+                        Toast.makeText(context, "Please voice some words or attach an image!", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .testTag("publish_post_button_bottom"),
+                shape = RoundedCornerShape(20.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Publish Passion Thread", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditProfileScreen(
+    profile: ProfileEntity,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String, String) -> Unit
+) {
+    var name by remember { mutableStateOf(profile.fullName) }
+    var username by remember { mutableStateOf(profile.username) }
+    var bio by remember { mutableStateOf(profile.bio) }
+    var avatar by remember { mutableStateOf(profile.avatarUrl) }
+    var banner by remember { mutableStateOf(profile.bannerUrl) }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val avatarLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            avatar = uri.toString()
+        }
+    }
+
+    val bannerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            banner = uri.toString()
+        }
+    }
+
+    val scenicBanners = listOf(
+        "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=600" to "Cosmic",
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600" to "Misty",
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600" to "Brutalist",
+        "https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?w=600" to "Cyber"
+    )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Update My Persona", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    Button(
+                        onClick = {
+                            if (name.isBlank() || username.isBlank()) {
+                                Toast.makeText(context, "Full name and username cannot be blank!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                onSave(name, username, bio, avatar, banner)
+                            }
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.testTag("save_profile_button_top")
+                    ) {
+                        Text("Save Card", fontWeight = FontWeight.ExtraBold)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
+                AsyncImage(
+                    model = banner.ifBlank { "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800" },
+                    contentDescription = "Cover preview",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
+                            )
+                        )
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    AsyncImage(
+                        model = avatar.ifBlank { "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" },
+                        contentDescription = "Avatar preview",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(CircleShape)
+                            .border(3.dp, Color.White, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.padding(bottom = 4.dp)) {
+                        Text(
+                            text = name.ifBlank { "Jordan Sparks" },
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black, color = Color.White)
+                        )
+                        Text(
+                            text = "@${username.ifBlank { "creative_mind" }}",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primaryContainer)
+                        )
+                    }
+                }
+            }
+
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("Aesthetic Media Pickers", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { avatarLauncher.launch("image/*") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Rounded.Portrait, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Pick Avatar")
+                    }
+
+                    OutlinedButton(
+                        onClick = { bannerLauncher.launch("image/*") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Rounded.Landscape, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Pick Cover")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text("Scenic Banners Presets", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold))
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    scenicBanners.forEach { pair ->
+                        val isSelected = banner == pair.first
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .clickable { banner = pair.first }
+                                .border(
+                                    width = if (isSelected) 3.dp else 0.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                    shape = RoundedCornerShape(8.dp)
+                                ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                AsyncImage(
+                                    model = pair.first,
+                                    contentDescription = pair.second,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.4f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = pair.second,
+                                        style = MaterialTheme.typography.labelSmall.copy(color = Color.White, fontWeight = FontWeight.Bold)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Text("Profile Credentials", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Display Name") },
+                    leadingIcon = { Icon(Icons.Rounded.Person, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth().testTag("edit_profile_name"),
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username Handle") },
+                    leadingIcon = { Icon(Icons.Rounded.AlternateEmail, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth().testTag("edit_profile_username"),
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = bio,
+                    onValueChange = { bio = it },
+                    label = { Text("Biography") },
+                    leadingIcon = { Icon(Icons.Rounded.EditNote, contentDescription = null) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(110.dp)
+                        .testTag("edit_profile_bio"),
+                    shape = RoundedCornerShape(16.dp)
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = {
+                        if (name.isBlank() || username.isBlank()) {
+                            Toast.makeText(context, "Full name and username cannot be blank!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onSave(name, username, bio, avatar, banner)
+                        }
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .testTag("save_profile_button_bottom")
+                ) {
+                    Icon(Icons.Rounded.Save, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Save & Update Card Info", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PostDetailScreen(
+    post: PostEntity,
+    allProfiles: List<ProfileEntity>,
+    onBack: () -> Unit,
+    onLike: () -> Unit,
+    onAddComment: (String) -> Unit,
+    onDeleteComment: (String) -> Unit,
+    myProfile: ProfileEntity?
+) {
+    var newCommentText by remember { mutableStateOf("") }
+    val comments = remember(post.commentsJson) { JsonParser.jsonToComments(post.commentsJson) }
+    val author = remember(allProfiles, post) {
+        allProfiles.find { it.id == post.userId || it.username == post.userUsername }
+    }
+    val isVerified = author?.isVerified == true
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Passion Thread", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(24.dp)
+            ) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = post.userAvatarUrl.ifEmpty { "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100" },
+                            contentDescription = "User Avatar",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    post.userFullName,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)
+                                )
+                                if (isVerified) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        Icons.Rounded.Verified,
+                                        contentDescription = "Verified Creator",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                "@${post.userUsername}",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        post.content,
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Normal,
+                            lineHeight = 28.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    if (post.imageUrl != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 300.dp),
+                            shape = RoundedCornerShape(24.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            AsyncImage(
+                                model = post.imageUrl,
+                                contentDescription = "Post Expression Visual",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        formatRelativeTime(post.createdAt).uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "${post.likesCount}",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Likes",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "${comments.size}",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Comments",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        IconButton(onClick = onLike) {
+                            Icon(
+                                imageVector = if (post.isLikedByMe) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                contentDescription = "Like icon",
+                                tint = if (post.isLikedByMe) Color(0xFFE91E63) else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        IconButton(onClick = {}) {
+                            Icon(
+                                Icons.Rounded.ChatBubbleOutline,
+                                contentDescription = "Comments",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                if (comments.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "No comments yet",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            )
+                            Text(
+                                "Be the first to reply and start the dialogue!",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            )
+                        }
+                    }
+                } else {
+                    items(comments, key = { it.id }) { comment ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp)
+                            ) {
+                                AsyncImage(
+                                    model = comment.avatarUrl.ifEmpty { "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100" },
+                                    contentDescription = "Commenter Avatar",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                                )
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            comment.fullName,
+                                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            "@${comment.username}",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                            )
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        comment.content,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+
+                                if (myProfile != null && comment.userId == myProfile.id) {
+                                    IconButton(
+                                        onClick = { onDeleteComment(comment.id) },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.DeleteOutline,
+                                            contentDescription = "Delete comment",
+                                            tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.06f))
+                    }
+                }
+            }
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = newCommentText,
+                        onValueChange = { newCommentText = it },
+                        placeholder = { Text("Post your Passion reply...") },
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("comment_input_feed"),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    IconButton(
+                        onClick = {
+                            if (newCommentText.isNotBlank()) {
+                                onAddComment(newCommentText)
+                                newCommentText = ""
+                            }
+                        },
+                        enabled = newCommentText.isNotBlank()
+                    ) {
+                        Icon(
+                            Icons.Rounded.Send,
+                            contentDescription = "Send Reply",
+                            tint = if (newCommentText.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+

@@ -281,6 +281,10 @@ class Repository(
         }
     }
 
+    suspend fun insertLocalActivity(activity: ActivityEntity) = withContext(Dispatchers.IO) {
+        activityDao.insertActivity(activity)
+    }
+
     suspend fun toggleLike(postId: String) = withContext(Dispatchers.IO) {
         val post = postDao.getPostById(postId) ?: return@withContext
         val newIsLiked = !post.isLikedByMe
@@ -291,31 +295,30 @@ class Repository(
         )
         postDao.insertPost(updated)
 
+        // Always generate an activity notification locally if liked
+        if (newIsLiked) {
+            val me = profileDao.getMyProfile()
+            if (me != null && post.userId != me.id) {
+                val activityId = UUID.randomUUID().toString()
+                val localActivityActivity = ActivityEntity(
+                    id = activityId,
+                    type = "like",
+                    actorId = me.id,
+                    actorUsername = me.username,
+                    actorAvatarUrl = me.avatarUrl,
+                    receiverId = post.userId,
+                    postId = postId,
+                    content = "liked your photo post.",
+                    createdAt = System.currentTimeMillis()
+                )
+                activityDao.insertActivity(localActivityActivity)
+            }
+        }
+
         // Try syncing remote if configured
         if (supabaseClient.isConfigured()) {
             val myId = getMyProfileId()
             supabaseClient.uploadPost(updated, myId)
-            
-            // Also generate an activity notification if liked
-            if (newIsLiked) {
-                val me = profileDao.getMyProfile()
-                if (me != null && post.userId != me.id) {
-                    val activityId = UUID.randomUUID().toString()
-                    val remoteActivityActivity = ActivityEntity(
-                        id = activityId,
-                        type = "like",
-                        actorId = me.id,
-                        actorUsername = me.username,
-                        actorAvatarUrl = me.avatarUrl,
-                        receiverId = post.userId,
-                        postId = postId,
-                        content = "liked your photo post.",
-                        createdAt = System.currentTimeMillis()
-                    )
-                    // (Optional) sync activity or store locally
-                    activityDao.insertActivity(remoteActivityActivity)
-                }
-            }
         }
     }
 
@@ -340,37 +343,54 @@ class Repository(
         )
         postDao.insertPost(updated)
 
+        // Generate comment activity notification locally
+        if (post.userId != me.id) {
+            val activityId = UUID.randomUUID().toString()
+            val commentActivity = ActivityEntity(
+                id = activityId,
+                type = "comment",
+                actorId = me.id,
+                actorUsername = me.username,
+                actorAvatarUrl = me.avatarUrl,
+                receiverId = post.userId,
+                postId = postId,
+                content = "commented: '${newComment.content}'",
+                createdAt = System.currentTimeMillis()
+            )
+            activityDao.insertActivity(commentActivity)
+        }
+
         // Try syncing remote if configured
         if (supabaseClient.isConfigured()) {
             supabaseClient.uploadPost(updated, post.userId)
-            
-            // Generate comment activity notification
-            if (post.userId != me.id) {
-                val activityId = UUID.randomUUID().toString()
-                val commentActivity = ActivityEntity(
-                    id = activityId,
-                    type = "comment",
-                    actorId = me.id,
-                    actorUsername = me.username,
-                    actorAvatarUrl = me.avatarUrl,
-                    receiverId = post.userId,
-                    postId = postId,
-                    content = "commented: '${newComment.content}'",
-                    createdAt = System.currentTimeMillis()
-                )
-                activityDao.insertActivity(commentActivity)
-            }
         }
     }
 
-    suspend fun updateMyProfile(username: String, fullName: String, bio: String, avatarUrl: String) = withContext(Dispatchers.IO) {
+    suspend fun deleteComment(postId: String, commentId: String) = withContext(Dispatchers.IO) {
+        val post = postDao.getPostById(postId) ?: return@withContext
+        val currentComments = JsonParser.jsonToComments(post.commentsJson).toMutableList()
+        val commentToDelete = currentComments.find { it.id == commentId } ?: return@withContext
+        currentComments.remove(commentToDelete)
+        val updated = post.copy(
+            commentsJson = JsonParser.commentsToJson(currentComments)
+        )
+        postDao.insertPost(updated)
+
+        // Try syncing remote if configured
+        if (supabaseClient.isConfigured()) {
+            supabaseClient.uploadPost(updated, post.userId)
+        }
+    }
+
+    suspend fun updateMyProfile(username: String, fullName: String, bio: String, avatarUrl: String, bannerUrl: String) = withContext(Dispatchers.IO) {
         val me = profileDao.getMyProfile()
         val updated = if (me != null) {
             me.copy(
                 username = username.trim().lowercase(),
                 fullName = fullName.trim(),
                 bio = bio.trim(),
-                avatarUrl = avatarUrl.trim()
+                avatarUrl = avatarUrl.trim(),
+                bannerUrl = bannerUrl.trim()
             )
         } else {
             ProfileEntity(
@@ -379,6 +399,7 @@ class Repository(
                 fullName = fullName.trim(),
                 bio = bio.trim(),
                 avatarUrl = avatarUrl.trim(),
+                bannerUrl = bannerUrl.trim(),
                 isMe = true
             )
         }

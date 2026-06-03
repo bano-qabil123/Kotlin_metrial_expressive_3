@@ -16,7 +16,8 @@ data class ProfileEntity(
     val isVerified: Boolean = false,
     val isFollowedByMe: Boolean = false,
     val followersCount: Int = 120,
-    val followingCount: Int = 85
+    val followingCount: Int = 85,
+    val bannerUrl: String = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1000"
 )
 
 @Entity(tableName = "posts")
@@ -127,7 +128,7 @@ interface ActivityDao {
 
 // --- AppDatabase ---
 
-@Database(entities = [ProfileEntity::class, PostEntity::class, ActivityEntity::class], version = 1, exportSchema = false)
+@Database(entities = [ProfileEntity::class, PostEntity::class, ActivityEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
     abstract fun postDao(): PostDao
